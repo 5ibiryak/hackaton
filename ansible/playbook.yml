@@ -1,0 +1,26 @@
+- hosts: app
+  become: yes
+  become_method: sudo
+  vars:
+
+    http_port: 3000
+    host_port: 3000
+    image_name: mariocaster/node-server
+    source_dockerfile_dir: /home/Dockerfile
+    docker_dest_dir: /srv/docker
+
+
+  tasks:
+    - name: Copy Dockerfile to server
+      copy: dest={{ docker_dest_dir }} src={{ source_dockerfile_dir }}
+
+    - name: Re/build Docker image
+      docker_image: name={{ image_name }}
+                    path={{ docker_dest_dir }}
+                    nocache=yes
+                    state=build
+      notify: Restart Docker image
+
+  handlers:
+    - name: Restart Docker image
+      docker: name=node ports={{ host_port }}:{{ http_port }} image={{ image_name }} state=reloaded
